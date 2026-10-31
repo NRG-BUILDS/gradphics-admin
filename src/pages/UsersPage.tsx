@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Search01Icon, UserGroupIcon } from "@hugeicons/core-free-icons"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { useEffect, useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Search01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -13,79 +13,93 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { useRequest } from "@/hooks/useRequest"
-import { apiRequest } from "@/lib/api"
+} from "@/components/ui/table";
+import { useRequest } from "@/hooks/useRequest";
+import { apiRequest } from "@/lib/api";
 
 type UserRow = {
-  id: string
-  name: string
-  email: string
-  institution: string | null
-  status: "active" | "suspended" | "deletion_pending" | "deleted"
-  emailVerified: boolean
-  joinedAt: string
-  lastLoginAt: string | null
-  designCount: number
-}
+  id: string;
+  name: string;
+  email: string;
+  institution: string | null;
+  status: "active" | "suspended" | "deletion_pending" | "deleted";
+  emailVerified: boolean;
+  joinedAt: string;
+  lastLoginAt: string | null;
+  designCount: number;
+};
 type UserList = {
-  users: UserRow[]
-  page: number
-  limit: number
-  total: number
-  pages: number
-}
+  users: UserRow[];
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+};
 type UserDetail = {
-  user: Omit<UserRow, "designCount"> & { role: "customer" }
+  user: Omit<UserRow, "designCount"> & { role: "customer" };
   designs: {
-    id: string
-    name: string
-    template: string
-    status: string
-    createdAt: string
-    readyAt: string | null
-  }[]
+    id: string;
+    name: string;
+    template: string;
+    status: string;
+    createdAt: string;
+    readyAt: string | null;
+  }[];
   payments: {
-    id: string
-    reference: string
-    amountMinor: number
-    currency: string
-    status: string
-    paidAt: string | null
-    refundedAmountMinor: number
-    refundedAt: string | null
-    createdAt: string
-  }[]
-}
+    id: string;
+    reference: string;
+    amountMinor: number;
+    currency: string;
+    status: string;
+    paidAt: string | null;
+    refundedAmountMinor: number;
+    refundedAt: string | null;
+    createdAt: string;
+  }[];
+  templateMonitorAccess: {
+    templates: {
+      id: string;
+      name: string;
+      slug: string;
+      visible: boolean;
+      archived: boolean;
+      granted: boolean;
+    }[];
+    orphanedTemplateIds: string[];
+  };
+};
 const emptyList: UserList = {
   users: [],
   page: 1,
   limit: 20,
   total: 0,
   pages: 0,
-}
+};
 const money = (minor: number, currency: string) =>
   new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
-  }).format(minor / 100)
+  }).format(minor / 100);
 const dateLabel = (value: string | null) =>
   value
     ? new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(
         new Date(value),
       )
-    : "—"
+    : "—";
 
 export function UsersPage() {
-  const [search, setSearch] = useState("")
-  const [page, setPage] = useState(1)
-  const [selectedId, setSelectedId] = useState("")
-  const [notice, setNotice] = useState("")
-  const [actionError, setActionError] = useState("")
-  const [busy, setBusy] = useState(false)
-  const listPath = `admin/users?limit=20&page=${page}&q=${encodeURIComponent(search.trim())}`
-  const list = useRequest<UserList>(listPath, emptyList)
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [selectedId, setSelectedId] = useState("");
+  const [notice, setNotice] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [monitorSearch, setMonitorSearch] = useState("");
+  const [monitorSelection, setMonitorSelection] = useState("");
+  const [monitorBusyId, setMonitorBusyId] = useState("");
+  const listPath = `admin/users?limit=20&page=${page}&q=${encodeURIComponent(search.trim())}`;
+  const list = useRequest<UserList>(listPath, emptyList);
   const details = useRequest<UserDetail>(
     selectedId ? `admin/users/${selectedId}` : "",
     {
@@ -102,53 +116,86 @@ export function UsersPage() {
       },
       designs: [],
       payments: [],
+      templateMonitorAccess: { templates: [], orphanedTemplateIds: [] },
     },
-  )
+  );
 
   useEffect(() => {
-    setPage(1)
-  }, [search])
+    setPage(1);
+  }, [search]);
   useEffect(() => {
-    if (!selectedId && list.data.users[0]) setSelectedId(list.data.users[0].id)
+    if (!selectedId && list.data.users[0]) setSelectedId(list.data.users[0].id);
     if (
       selectedId &&
       !list.data.users.some((user) => user.id === selectedId) &&
       list.data.users[0]
     )
-      setSelectedId(list.data.users[0].id)
+      setSelectedId(list.data.users[0].id);
     if (selectedId && !list.isLoading && !list.data.users.length)
-      setSelectedId("")
-  }, [list.data.users, list.isLoading, selectedId])
+      setSelectedId("");
+  }, [list.data.users, list.isLoading, selectedId]);
 
   async function changeStatus() {
-    const user = details.data.user
-    if (!user.id) return
-    const status = user.status === "suspended" ? "active" : "suspended"
-    setBusy(true)
-    setNotice("")
-    setActionError("")
+    const user = details.data.user;
+    if (!user.id) return;
+    const status = user.status === "suspended" ? "active" : "suspended";
+    setBusy(true);
+    setNotice("");
+    setActionError("");
     try {
       await apiRequest(`admin/users/${user.id}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status }),
-      })
+      });
       setNotice(
         `${user.name} ${status === "suspended" ? "was suspended" : "was reactivated"}.`,
-      )
-      await Promise.all([list.refetch(), details.refetch()])
+      );
+      await Promise.all([list.refetch(), details.refetch()]);
     } catch (error) {
       setActionError(
         error instanceof Error
           ? error.message
           : "Could not update this account.",
-      )
+      );
     } finally {
-      setBusy(false)
+      setBusy(false);
     }
   }
 
-  const user =
-    details.data.user.id === selectedId ? details.data.user : null
+  async function changeMonitorAccess(templateId: string, granted: boolean) {
+    const selectedUser = details.data.user;
+    if (!selectedUser.id || !templateId) return;
+    setMonitorBusyId(templateId);
+    setNotice("");
+    setActionError("");
+    try {
+      await apiRequest(
+        `admin/users/${selectedUser.id}/template-monitor-access/${templateId}`,
+        { method: granted ? "PUT" : "DELETE" },
+      );
+      const templateName =
+        details.data.templateMonitorAccess.templates.find(
+          (template) => template.id === templateId,
+        )?.name ?? "Template";
+      setNotice(
+        granted
+          ? `Monitoring access granted for ${templateName}.`
+          : `Monitoring access revoked for ${templateName}.`,
+      );
+      setMonitorSelection("");
+      await details.refetch();
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "Could not update template monitoring access.",
+      );
+    } finally {
+      setMonitorBusyId("");
+    }
+  }
+
+  const user = details.data.user.id === selectedId ? details.data.user : null;
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -228,7 +275,7 @@ export function UsersPage() {
                     key={row.id}
                     tabIndex={0}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter") setSelectedId(row.id)
+                      if (event.key === "Enter") setSelectedId(row.id);
                     }}
                     onClick={() => setSelectedId(row.id)}
                     aria-selected={selectedId === row.id}
@@ -366,6 +413,140 @@ export function UsersPage() {
                     </p>
                   </div>
                 </div>
+                <section className="mt-5 border-b border-border/70 pb-5">
+                  <div className="mb-3">
+                    <h3 className="text-xs font-semibold">
+                      Template monitoring access
+                    </h3>
+                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                      Grants do not expire. Revocation takes effect immediately.
+                    </p>
+                  </div>
+                  <label
+                    className="mb-2 block text-[10px] text-muted-foreground"
+                    htmlFor="monitor-template-search"
+                  >
+                    Find a template to grant
+                  </label>
+                  <Input
+                    id="monitor-template-search"
+                    value={monitorSearch}
+                    onChange={(event) => setMonitorSearch(event.target.value)}
+                    placeholder="Search templates"
+                    className="h-9 rounded-xl bg-white text-xs"
+                  />
+                  <div className="mt-2 flex gap-2">
+                    <select
+                      aria-label="Template to grant monitoring access"
+                      value={monitorSelection}
+                      onChange={(event) =>
+                        setMonitorSelection(event.target.value)
+                      }
+                      className="h-9 min-w-0 flex-1 rounded-xl border border-input bg-white px-3 text-xs"
+                    >
+                      <option value="">Select a template</option>
+                      {details.data.templateMonitorAccess.templates
+                        .filter((template) => !template.granted)
+                        .filter((template) =>
+                          `${template.name} ${template.slug}`
+                            .toLowerCase()
+                            .includes(monitorSearch.trim().toLowerCase()),
+                        )
+                        .map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name}
+                            {template.archived
+                              ? " · Archived"
+                              : template.visible
+                                ? " · Published"
+                                : " · Unpublished"}
+                          </option>
+                        ))}
+                    </select>
+                    <Button
+                      size="sm"
+                      disabled={!monitorSelection || Boolean(monitorBusyId)}
+                      onClick={() =>
+                        void changeMonitorAccess(monitorSelection, true)
+                      }
+                      className="rounded-xl"
+                    >
+                      {monitorBusyId === monitorSelection ? "Saving…" : "Grant"}
+                    </Button>
+                  </div>
+                  <div className="mt-4">
+                    <p className="mb-2 text-[10px] font-medium text-muted-foreground">
+                      Current grants
+                    </p>
+                    {details.data.templateMonitorAccess.templates.some(
+                      (template) => template.granted,
+                    ) ||
+                    details.data.templateMonitorAccess.orphanedTemplateIds
+                      .length ? (
+                      <div className="flex flex-col gap-2">
+                        {details.data.templateMonitorAccess.templates
+                          .filter((template) => template.granted)
+                          .map((template) => (
+                            <div
+                              key={template.id}
+                              className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f5f3] p-3"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-medium">
+                                  {template.name}
+                                </p>
+                                <p className="mt-1 text-[10px] text-muted-foreground">
+                                  {template.archived
+                                    ? "Archived · stats unavailable"
+                                    : template.visible
+                                      ? "Published"
+                                      : "Unpublished · stats unavailable"}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                disabled={Boolean(monitorBusyId)}
+                                onClick={() =>
+                                  void changeMonitorAccess(template.id, false)
+                                }
+                              >
+                                {monitorBusyId === template.id
+                                  ? "Saving…"
+                                  : "Revoke"}
+                              </Button>
+                            </div>
+                          ))}
+                        {details.data.templateMonitorAccess.orphanedTemplateIds.map(
+                          (templateId) => (
+                            <div
+                              key={templateId}
+                              className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f5f3] p-3"
+                            >
+                              <p className="text-xs text-muted-foreground">
+                                Unavailable template
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                disabled={Boolean(monitorBusyId)}
+                                onClick={() =>
+                                  void changeMonitorAccess(templateId, false)
+                                }
+                              >
+                                Revoke
+                              </Button>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ) : (
+                      <p className="rounded-xl bg-[#f7f5f3] px-3 py-4 text-center text-[10px] text-muted-foreground">
+                        No templates are currently assigned.
+                      </p>
+                    )}
+                  </div>
+                </section>
                 <div className="pt-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-xs font-semibold">Recent designs</h3>
@@ -470,5 +651,5 @@ export function UsersPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
