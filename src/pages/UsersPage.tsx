@@ -1,11 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Search01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
+import {
+  Mail01Icon,
+  Search01Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -95,6 +100,7 @@ export function UsersPage() {
   const [notice, setNotice] = useState("");
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [emailBusy, setEmailBusy] = useState(false);
   const [monitorSearch, setMonitorSearch] = useState("");
   const [monitorSelection, setMonitorSelection] = useState("");
   const [monitorBusyId, setMonitorBusyId] = useState("");
@@ -159,6 +165,32 @@ export function UsersPage() {
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function sendUserEmail(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user?.id) return;
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const subject = String(form.get("subject") ?? "").trim();
+    const message = String(form.get("message") ?? "").trim();
+    setEmailBusy(true);
+    setNotice("");
+    setActionError("");
+    try {
+      await apiRequest(`admin/users/${user.id}/email`, {
+        method: "POST",
+        body: JSON.stringify({ subject, message }),
+      });
+      setNotice(`Email sent to ${user.email}.`);
+      formElement.reset();
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : "Could not send this email.",
+      );
+    } finally {
+      setEmailBusy(false);
     }
   }
 
@@ -413,6 +445,52 @@ export function UsersPage() {
                     </p>
                   </div>
                 </div>
+                <section className="mt-5 border-b border-border/70 pb-5">
+                  <div className="mb-3">
+                    <h3 className="text-xs font-semibold">Send an email</h3>
+                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                      Send a one-to-one message to {user.email}.
+                    </p>
+                  </div>
+                  <form
+                    className="flex flex-col gap-3"
+                    onSubmit={(event) => void sendUserEmail(event)}
+                  >
+                    <label className="flex flex-col gap-1.5 text-[10px] font-medium text-muted-foreground">
+                      Subject
+                      <Input
+                        className="h-9 rounded-xl bg-white text-xs text-foreground"
+                        maxLength={160}
+                        name="subject"
+                        placeholder="A note from Gradphics"
+                        required
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5 text-[10px] font-medium text-muted-foreground">
+                      Message
+                      <Textarea
+                        className="min-h-32 resize-y rounded-xl bg-white text-xs leading-relaxed text-foreground"
+                        maxLength={10000}
+                        name="message"
+                        placeholder="Write your message…"
+                        required
+                      />
+                    </label>
+                    <Button
+                      className="w-full rounded-xl"
+                      disabled={emailBusy}
+                      type="submit"
+                    >
+                      <HugeiconsIcon
+                        aria-hidden="true"
+                        icon={Mail01Icon}
+                        size={15}
+                        strokeWidth={1.8}
+                      />
+                      {emailBusy ? "Sending…" : "Send email"}
+                    </Button>
+                  </form>
+                </section>
                 <section className="mt-5 border-b border-border/70 pb-5">
                   <div className="mb-3">
                     <h3 className="text-xs font-semibold">

@@ -1,4 +1,4 @@
-import { HugeiconsIcon } from "@hugeicons/react"
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   DashboardBrowsingIcon,
   Building02Icon,
@@ -6,14 +6,14 @@ import {
   Mail01Icon,
   Search01Icon,
   UserGroupIcon,
-} from "@hugeicons/core-free-icons"
-import { NavLink, Outlet } from "react-router-dom"
-import { useSelector } from "react-redux"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { signOut } from "@/lib/api"
-import type { RootState } from "@/lib/store"
+} from "@hugeicons/core-free-icons";
+import { NavLink, Outlet } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/api";
+import type { RootState } from "@/lib/store";
 
 const navigation = [
   { to: "/", label: "Overview", icon: DashboardBrowsingIcon, end: true },
@@ -21,17 +21,23 @@ const navigation = [
   { to: "/support", label: "Support", icon: Mail01Icon },
   { to: "/templates", label: "Templates", icon: Image01Icon },
   { to: "/institutions", label: "Institutions", icon: Building02Icon },
-]
+];
 
 function BrandMark() {
   return (
     <div className="flex flex-col items-start gap-2">
       <div className="rounded-lg bg-white px-2">
-        <img alt="Gradphics" className="block w-[132px]" src="/gradphics-logo.png" />
+        <img
+          alt="Gradphics"
+          className="block w-[132px]"
+          src="/gradphics-logo.png"
+        />
       </div>
-      <p className="pl-1 text-[10px] tracking-[0.12em] text-white/45">ADMIN WORKSPACE</p>
+      <p className="pl-1 text-[10px] tracking-[0.12em] text-white/45">
+        ADMIN WORKSPACE
+      </p>
     </div>
-  )
+  );
 }
 
 function NavigationLinks({ compact = false }: { compact?: boolean }) {
@@ -43,7 +49,9 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
       className={({ isActive }) =>
         cn(
           "group flex items-center gap-3 rounded-xl text-sm transition-colors",
-          compact ? "shrink-0 px-3 py-2" : "px-3 py-3",
+          compact
+            ? "min-w-0 flex-col justify-center gap-1 px-1 py-2 text-center text-[10px]"
+            : "px-3 py-3",
           isActive
             ? "bg-white/12 font-medium text-white"
             : "text-white/60 hover:bg-white/6 hover:text-white",
@@ -57,15 +65,17 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
             strokeWidth={1.8}
             className="size-[18px] shrink-0"
           />
-          <span>{item.label}</span>
+          <span className={compact ? "max-w-full truncate" : undefined}>
+            {item.label}
+          </span>
         </>
       )}
     </NavLink>
-  ))
+  ));
 }
 
 export function AdminLayout() {
-  const user = useSelector((state: RootState) => state.auth.user)
+  const user = useSelector((state: RootState) => state.auth.user);
   return (
     <div className="min-h-svh bg-background">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col bg-[#274d45] px-5 py-6 lg:flex">
@@ -140,25 +150,29 @@ export function AdminLayout() {
               </div>
             </div>
           </div>
-          <nav
-            aria-label="Mobile navigation"
-            className="flex gap-1 overflow-x-auto pb-3 lg:hidden"
-          >
-            <NavigationLinks compact />
-          </nav>
         </header>
-        <main className="mx-auto max-w-[1440px] px-5 py-7 sm:px-8 sm:py-9">
+        <main className="mx-auto max-w-[1440px] px-5 pt-7 pb-24 sm:px-8 sm:pt-9 lg:pb-9">
           <Outlet />
         </main>
       </div>
+      <nav
+        aria-label="Mobile navigation"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-white/10 bg-[#274d45] px-2 pt-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-[0_-8px_24px_rgba(24,48,43,0.12)] lg:hidden"
+      >
+        <NavigationLinks compact />
+      </nav>
     </div>
-  )
+  );
 }
 
 function BrandMarkMobile() {
   return (
     <div className="flex items-center lg:hidden">
-      <img alt="Gradphics" className="block w-[112px]" src="/gradphics-logo.png" />
+      <img
+        alt="Gradphics"
+        className="block w-[112px]"
+        src="/gradphics-logo.png"
+      />
     </div>
-  )
+  );
 }

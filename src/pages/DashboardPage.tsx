@@ -1,16 +1,16 @@
-import { HugeiconsIcon } from "@hugeicons/react"
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowUpRight01Icon,
   ChartLineData01Icon,
   Image01Icon,
   Mail01Icon,
   UserGroupIcon,
-} from "@hugeicons/core-free-icons"
-import { Link } from "react-router-dom"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+} from "@hugeicons/core-free-icons";
+import { Link } from "react-router-dom";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -18,49 +18,49 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { useRequest } from "@/hooks/useRequest"
+} from "@/components/ui/table";
+import { useRequest } from "@/hooks/useRequest";
 
 type Summary = {
-  generatedAt: string
-  window: { from: string; to: string }
+  generatedAt: string;
+  window: { from: string; to: string };
   metrics: {
-    totalUsers: number
-    newUsers30d: number
-    totalDesigns: number
-    newDesigns30d: number
-    designsInProgress: number
-    netRevenueMinor: number
-    successfulPayments: number
-    refundedRevenueMinor: number
-    refundedPayments: number
-    openSupportTickets: number
-  }
+    totalUsers: number;
+    newUsers30d: number;
+    totalDesigns: number;
+    newDesigns30d: number;
+    designsInProgress: number;
+    netRevenueMinor: number;
+    successfulPayments: number;
+    refundedRevenueMinor: number;
+    refundedPayments: number;
+    openSupportTickets: number;
+  };
   revenueByMonth: {
-    year: number
-    month: number
-    amountMinor: number
-    payments: number
-  }[]
+    year: number;
+    month: number;
+    amountMinor: number;
+    payments: number;
+  }[];
   recentActivity: {
-    id: string
-    type: string
-    subjectType: string
-    subjectId: string | null
-    occurredAt: string
-    metadata: Record<string, unknown>
-  }[]
-}
+    id: string;
+    type: string;
+    subjectType: string;
+    subjectId: string | null;
+    occurredAt: string;
+    metadata: Record<string, unknown>;
+  }[];
+};
 type AdminUserRow = {
-  id: string
-  name: string
-  email: string
-  institution: string | null
-  status: "active" | "suspended"
-  joinedAt: string
-  designCount: number
-}
-type UserList = { users: AdminUserRow[]; total: number }
+  id: string;
+  name: string;
+  email: string;
+  institution: string | null;
+  status: "active" | "suspended";
+  joinedAt: string;
+  designCount: number;
+};
+type UserList = { users: AdminUserRow[]; total: number };
 
 const emptySummary: Summary = {
   generatedAt: "",
@@ -79,17 +79,17 @@ const emptySummary: Summary = {
   },
   revenueByMonth: [],
   recentActivity: [],
-}
+};
 const money = (amountMinor: number) =>
   new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
     maximumFractionDigits: 0,
-  }).format(amountMinor / 100)
+  }).format(amountMinor / 100);
 const dateLabel = (value: string) =>
   new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(
     new Date(value),
-  )
+  );
 const eventLabel: Record<string, string> = {
   "support.ticket.resolved": "Support ticket resolved",
   "support.ticket.reopened": "Support ticket reopened",
@@ -102,26 +102,27 @@ const eventLabel: Record<string, string> = {
   "template.archived": "Template archived",
   "user.suspended": "Customer suspended",
   "user.reactivated": "Customer reactivated",
+  "user.email.sent": "Customer email sent",
   "payment.refund.processed": "Payment refund processed",
   "payment.refund.failed": "Payment refund needs attention",
-}
+};
 
 export function DashboardPage() {
-  const summary = useRequest<Summary>("admin/dashboard/summary", emptySummary)
+  const summary = useRequest<Summary>("admin/dashboard/summary", emptySummary);
   const userList = useRequest<UserList>("admin/users?limit=4", {
     users: [],
     total: 0,
-  })
-  const metrics = summary.data.metrics
-  const bars = summary.data.revenueByMonth
-  const maxAmount = Math.max(1, ...bars.map((bar) => bar.amountMinor))
-  const currentDate = new Date()
+  });
+  const metrics = summary.data.metrics;
+  const bars = summary.data.revenueByMonth;
+  const maxAmount = Math.max(1, ...bars.map((bar) => bar.amountMinor));
+  const currentDate = new Date();
   const greeting =
     currentDate.getHours() < 12
       ? "Good morning"
       : currentDate.getHours() < 18
         ? "Good afternoon"
-        : "Good evening"
+        : "Good evening";
   const metricCards = [
     {
       title: "Total users",
@@ -151,7 +152,7 @@ export function DashboardPage() {
       icon: Mail01Icon,
       tint: "bg-[#f5e5e2] text-[#bb6356]",
     },
-  ]
+  ];
 
   return (
     <div className="flex flex-col gap-7">
@@ -245,7 +246,10 @@ export function DashboardPage() {
               className="h-44 w-full border-b border-border/70 pb-1"
             >
               {bars.map((item, index) => {
-                const height = Math.max(2, (item.amountMinor / maxAmount) * 108)
+                const height = Math.max(
+                  2,
+                  (item.amountMinor / maxAmount) * 108,
+                );
                 return (
                   <rect
                     key={`${item.year}-${item.month}`}
@@ -260,7 +264,7 @@ export function DashboardPage() {
                         : "fill-[#d7dfd7] hover:fill-[#9caf9e]"
                     }
                   />
-                )
+                );
               })}
             </svg>
             <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
@@ -424,5 +428,5 @@ export function DashboardPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
